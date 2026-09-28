@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Admin SMCC</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="admin-layout">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>Admin SMCC</h2>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item active" data-target="dashboard">Dashboard</li>
+                <li class="nav-item" data-target="layanan">Layanan</li>
+                <li class="nav-item" data-target="pertanyaan">Pertanyaan</li>
+                <li class="nav-item" data-target="percakapan">Percakapan</li>
+                <li class="nav-item" data-target="curhat">Sesi Curhat</li>
+                <li class="nav-item" data-target="tindaklanjut">Tindak Lanjut</li>
+                <li class="nav-item" data-target="respons">Respons Chatbot</li>
+            </ul>
+        </aside>
+
+        <main class="admin-main">
+            <div id="content-area">
+                <!-- Content injected here by JS -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Modals (Injected via JS or pre-built and hidden) -->
+    <div id="modal-container" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title">Modal Title</h2>
+                <button class="close-btn" id="modal-close">&times;</button>
+            </div>
+            <div id="modal-body">
+                <!-- Dynamic form injected here -->
+            </div>
+        </div>
+    </div>
+
+    <script src="admin.js"></script>
+</body>
+</html>
