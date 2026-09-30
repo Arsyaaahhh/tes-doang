@@ -424,6 +424,7 @@ function renderPercakapan() {
                     <tr>
                         <th>ID</th>
                         <th>Waktu</th>
+                        <th>Platform</th>
                         <th>Layanan</th>
                         <th>Jumlah Pertanyaan</th>
                         <th>Status</th>
@@ -439,6 +440,7 @@ function renderPercakapan() {
             <tr>
                 <td>${c.id}</td>
                 <td>${c.date} ${c.time}</td>
+                <td><span class="badge badge-primary">${c.platform || 'WA'}</span></td>
                 <td>${c.serviceName}</td>
                 <td>${c.qa.length}</td>
                 <td><span class="badge ${statusBadge}">${c.status || '-'}</span></td>
@@ -477,9 +479,44 @@ function detailPercakapan(id) {
         `;
     });
     
-    html += `</div>`;
+    if (conv.adminReplies && conv.adminReplies.length > 0) {
+        html += `<h5 class="mt-4">Balasan Admin:</h5>`;
+        conv.adminReplies.forEach(reply => {
+            html += `<div style="background:#e0f2fe; padding:0.5rem; border-radius:var(--radius-sm); margin-bottom:0.5rem; color:#0369a1;">${reply}</div>`;
+        });
+    }
+    
+    html += `</div>
+        <div class="mt-4">
+            <label>Kirim Balasan (Live Chat):</label>
+            <div class="flex gap-2 mt-4">
+                <input type="text" id="admin-reply-input" class="form-control" placeholder="Ketik balasan Anda...">
+                <button class="btn btn-primary" onclick="sendAdminReply('${conv.id}', 'conversation')">Balas</button>
+            </div>
+        </div>
+    `;
     modalBody.innerHTML = html;
     openModal();
+}
+
+function sendAdminReply(id, type) {
+    const input = document.getElementById('admin-reply-input');
+    const text = input.value.trim();
+    if (!text) return;
+    
+    let key = type === 'conversation' ? 'smcc_conversations' : 'smcc_curhat';
+    let items = getData(key);
+    let index = items.findIndex(x => x.id === id);
+    
+    if (index !== -1) {
+        if (!items[index].adminReplies) items[index].adminReplies = [];
+        items[index].adminReplies.push(text);
+        saveData(key, items);
+        
+        // Re-render modal
+        if (type === 'conversation') detailPercakapan(id);
+        else detailCurhat(id);
+    }
 }
 
 // ==========================================
@@ -498,6 +535,7 @@ function renderCurhat() {
                     <tr>
                         <th>ID</th>
                         <th>Waktu</th>
+                        <th>Platform</th>
                         <th>Cuplikan Isi</th>
                         <th>Status</th>
                         <th>Aksi</th>
@@ -513,6 +551,7 @@ function renderCurhat() {
             <tr>
                 <td>${c.id}</td>
                 <td>${c.date} ${c.time}</td>
+                <td><span class="badge badge-primary">${c.platform || 'WA'}</span></td>
                 <td>${snippet}</td>
                 <td><span class="badge ${statusBadge}">${c.status || '-'}</span></td>
                 <td>
@@ -548,6 +587,26 @@ function detailCurhat(id) {
             </div>
         </div>
     `;
+    
+    if (curhat.adminReplies && curhat.adminReplies.length > 0) {
+        html += `<div class="mt-4"><strong>Balasan Admin:</strong>`;
+        curhat.adminReplies.forEach(reply => {
+            html += `<div style="background:#dcfce7; padding:0.5rem; border-radius:var(--radius-sm); margin-top:0.5rem; color:#166534;">${reply}</div>`;
+        });
+        html += `</div>`;
+    }
+    
+    html += `
+        <div class="mt-4">
+            <label>Kirim Balasan (Live Chat):</label>
+            <div class="flex gap-2 mt-4">
+                <input type="text" id="admin-reply-input" class="form-control" placeholder="Ketik balasan Anda...">
+                <button class="btn btn-primary" onclick="sendAdminReply('${curhat.id}', 'curhat')">Balas</button>
+            </div>
+        </div>
+    `;
+    
+    modalBody.innerHTML = html;
     openModal();
 }
 
@@ -572,6 +631,7 @@ function renderTindakLanjut() {
                     <tr>
                         <th>ID</th>
                         <th>Waktu</th>
+                        <th>Platform</th>
                         <th>Tipe</th>
                         <th>Status TL</th>
                         <th>Aksi</th>
@@ -591,6 +651,7 @@ function renderTindakLanjut() {
             <tr>
                 <td>${item.id}</td>
                 <td>${item.date} ${item.time}</td>
+                <td><span class="badge badge-primary">${item.platform || 'WA'}</span></td>
                 <td>${type}</td>
                 <td><span class="badge ${badgeClass}">${item.followUpStatus}</span></td>
                 <td>

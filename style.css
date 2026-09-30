@@ -226,6 +226,81 @@ p {
     background-color: #075e54;
 }
 
+/* Platform Selector */
+.platform-selector {
+    text-align: center;
+    padding: 10px;
+    background-color: #fff;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 10px;
+}
+.platform-selector select {
+    padding: 5px 10px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+}
+
+/* Instagram Theme */
+.chat-container.ig-theme {
+    background-color: #ffffff;
+    border: 1px solid #dbdbdb;
+}
+.chat-container.ig-theme .chat-header {
+    background-color: #ffffff;
+    color: #262626;
+    border-bottom: 1px solid #dbdbdb;
+    box-shadow: none;
+}
+.chat-container.ig-theme .chat-header h1 {
+    color: #262626;
+    font-weight: 600;
+}
+.chat-container.ig-theme .btn-admin {
+    background-color: #efefef;
+    color: #262626;
+}
+.chat-container.ig-theme .message-bot {
+    background-color: #efefef;
+    color: #262626;
+    border-radius: 20px;
+    border-bottom-left-radius: 4px;
+    box-shadow: none;
+}
+.chat-container.ig-theme .message-user {
+    background-color: #3797f0;
+    color: white;
+    border-radius: 20px;
+    border-bottom-right-radius: 4px;
+    box-shadow: none;
+}
+.chat-container.ig-theme .chat-option-btn {
+    border: 1px solid #dbdbdb;
+    color: #262626;
+}
+.chat-container.ig-theme .chat-option-btn:hover {
+    background-color: #efefef;
+    color: #262626;
+}
+.chat-container.ig-theme .chat-input-area {
+    background-color: #ffffff;
+    border-top: 1px solid #dbdbdb;
+}
+.chat-container.ig-theme .chat-input {
+    border: 1px solid #dbdbdb;
+    border-radius: 20px;
+    box-shadow: none;
+}
+.chat-container.ig-theme #send-btn {
+    background-color: transparent;
+    color: #3797f0;
+    border: none;
+    box-shadow: none;
+    font-weight: 600;
+}
+.chat-container.ig-theme #send-btn:hover {
+    color: #1a77d2;
+}
+
 /* Admin Dashboard Layout */
 .admin-layout {
     display: flex;

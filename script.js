@@ -58,28 +58,94 @@ let conversationData = {
     id: '',
     date: '',
     time: '',
+    platform: 'WA',
     serviceName: '',
     qa: [],
     status: '',
     followUpStatus: 'Baru',
-    followUpNotes: ''
+    followUpNotes: '',
+    adminReplies: []
 };
 let curhatData = {
     id: '',
     date: '',
     time: '',
+    platform: 'WA',
     text: '',
     botResponse: '',
     status: '',
     followUpStatus: 'Baru',
-    followUpNotes: ''
+    followUpNotes: '',
+    adminReplies: []
 };
+let lastAdminReplyCount = 0;
+let replyPollingInterval = null;
 
 // DOM Elements
 const messagesContainer = document.getElementById('chat-messages');
 const inputArea = document.getElementById('chat-input-area');
 const chatInput = document.getElementById('chat-input');
 const sendBtn = document.getElementById('send-btn');
+const platformSelect = document.getElementById('platform-select');
+const chatContainer = document.getElementById('chat-container');
+
+// Listen to platform change
+platformSelect.addEventListener('change', (e) => {
+    if (e.target.value === 'IG') {
+        chatContainer.classList.add('ig-theme');
+    } else {
+        chatContainer.classList.remove('ig-theme');
+    }
+});
+
+function saveCurrentSession(type) {
+    if (type === 'conversation') {
+        const convs = JSON.parse(localStorage.getItem('smcc_conversations') || '[]');
+        const idx = convs.findIndex(c => c.id === conversationData.id);
+        if (idx !== -1) {
+            convs[idx] = conversationData;
+        } else {
+            convs.push(conversationData);
+        }
+        localStorage.setItem('smcc_conversations', JSON.stringify(convs));
+    } else if (type === 'curhat') {
+        const curhats = JSON.parse(localStorage.getItem('smcc_curhat') || '[]');
+        const idx = curhats.findIndex(c => c.id === curhatData.id);
+        if (idx !== -1) {
+            curhats[idx] = curhatData;
+        } else {
+            curhats.push(curhatData);
+        }
+        localStorage.setItem('smcc_curhat', JSON.stringify(curhats));
+    }
+}
+
+function pollAdminReplies(type) {
+    if (replyPollingInterval) clearInterval(replyPollingInterval);
+    
+    replyPollingInterval = setInterval(() => {
+        let currentId = type === 'conversation' ? conversationData.id : curhatData.id;
+        if (!currentId) return;
+        
+        let items = JSON.parse(localStorage.getItem(type === 'conversation' ? 'smcc_conversations' : 'smcc_curhat') || '[]');
+        let currentItem = items.find(x => x.id === currentId);
+        
+        if (currentItem && currentItem.adminReplies && currentItem.adminReplies.length > lastAdminReplyCount) {
+            const newReplies = currentItem.adminReplies.slice(lastAdminReplyCount);
+            newReplies.forEach(reply => {
+                addBotMessage(`[Admin]: ${reply}`);
+            });
+            lastAdminReplyCount = currentItem.adminReplies.length;
+            
+            // Re-sync local state
+            if (type === 'conversation') {
+                conversationData = currentItem;
+            } else {
+                curhatData = currentItem;
+            }
+        }
+    }, 2000);
+}
 
 function scrollToBottom() {
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
@@ -141,6 +207,13 @@ function getFormattedTime() {
 
 function initChat() {
     seedData();
+    // Default platform styling
+    if (platformSelect.value === 'IG') {
+        chatContainer.classList.add('ig-theme');
+    } else {
+        chatContainer.classList.remove('ig-theme');
+    }
+    
     messagesContainer.innerHTML = '';
     inputArea.classList.remove('hidden'); // allow user to type first
     
@@ -183,12 +256,17 @@ function startService(service) {
         id: generateId('C'),
         date: getFormattedDate(),
         time: getFormattedTime(),
+        platform: platformSelect.value,
         serviceName: service.name,
         qa: [],
-        status: '',
+        status: 'Aktif',
         followUpStatus: 'Baru',
-        followUpNotes: ''
+        followUpNotes: '',
+        adminReplies: []
     };
+    lastAdminReplyCount = 0;
+    saveCurrentSession('conversation');
+    pollAdminReplies('conversation');
     
     // Load questions for this service
     const allQuestions = JSON.parse(localStorage.getItem('smcc_questions') || '[]');
@@ -242,6 +320,7 @@ function saveAnswer(questionText, answerText) {
         q: questionText,
         a: answerText
     });
+    saveCurrentSession('conversation');
 }
 
 function startCurhat() {
@@ -252,12 +331,17 @@ function startCurhat() {
         id: generateId('S'),
         date: getFormattedDate(),
         time: getFormattedTime(),
+        platform: platformSelect.value,
         text: '',
         botResponse: '',
-        status: '',
+        status: 'Aktif',
         followUpStatus: 'Baru',
-        followUpNotes: ''
+        followUpNotes: '',
+        adminReplies: []
     };
+    lastAdminReplyCount = 0;
+    saveCurrentSession('curhat');
+    pollAdminReplies('curhat');
     
     setTimeout(() => {
         addBotMessage("Silakan ceritakan apa yang sedang Anda rasakan atau alami saat ini.");
@@ -288,6 +372,7 @@ function handleCurhatInput(text) {
     }
     
     curhatData.botResponse = response;
+    saveCurrentSession('curhat');
     
     setTimeout(() => {
         addBotMessage(response);
@@ -320,15 +405,13 @@ function handleFollowUp(type, needsFollowUp) {
     
     if (type === 'conversation') {
         conversationData.status = status;
-        const convs = JSON.parse(localStorage.getItem('smcc_conversations') || '[]');
-        convs.push(conversationData);
-        localStorage.setItem('smcc_conversations', JSON.stringify(convs));
+        saveCurrentSession('conversation');
     } else if (type === 'curhat') {
         curhatData.status = status;
-        const curhats = JSON.parse(localStorage.getItem('smcc_curhat') || '[]');
-        curhats.push(curhatData);
-        localStorage.setItem('smcc_curhat', JSON.stringify(curhats));
+        saveCurrentSession('curhat');
     }
+    
+    if (replyPollingInterval) clearInterval(replyPollingInterval);
     
     setTimeout(() => {
         addBotMessage("Terima kasih! Sesi Anda telah selesai. Anda dapat menutup halaman ini atau memuat ulang halaman untuk memulai percakapan baru.");
