@@ -79,6 +79,7 @@ function resetDemoData() {
 function renderView() {
     switch (activeTab) {
         case 'dashboard': renderDashboard(); break;
+        case 'livechat': renderLiveChat(); break;
         case 'layanan': renderLayanan(); break;
         case 'pertanyaan': renderPertanyaan(); break;
         case 'percakapan': renderPercakapan(); break;
@@ -126,6 +127,147 @@ function renderDashboard() {
             </div>
         </div>
     `;
+}
+
+// ==========================================
+// LIVE CHAT VIEW (WA WEB EMBED)
+// ==========================================
+let currentLiveChatId = null;
+let currentLiveChatType = null;
+let liveChatInterval = null;
+
+function renderLiveChat() {
+    if (liveChatInterval) clearInterval(liveChatInterval);
+    
+    // Combine active conversations and curhats
+    const convs = getData('smcc_conversations').map(c => ({...c, dataType: 'conversation'}));
+    const curhats = getData('smcc_curhat').map(c => ({...c, dataType: 'curhat'}));
+    let allChats = [...convs, ...curhats].sort((a,b) => new Date(b.date + 'T' + b.time) - new Date(a.date + 'T' + a.time));
+    
+    let sidebarHtml = allChats.map(c => {
+        let title = c.dataType === 'conversation' ? `Layanan: ${c.serviceName}` : 'Sesi Curhat';
+        let preview = c.dataType === 'conversation' && c.qa.length > 0 ? c.qa[c.qa.length-1].a : 
+                     (c.dataType === 'curhat' ? c.text : 'Memulai percakapan...');
+        let isActive = currentLiveChatId === c.id ? 'active' : '';
+        
+        return `
+            <div class="wa-chat-item ${isActive}" onclick="openLiveChat('${c.id}', '${c.dataType}')">
+                <div class="title">${title} <span class="badge ${c.platform === 'IG' ? 'badge-primary' : 'badge-success'}" style="font-size:0.6rem; padding:0.1rem 0.3rem">${c.platform || 'WA'}</span></div>
+                <div class="preview">${preview}</div>
+            </div>
+        `;
+    }).join('');
+
+    contentArea.innerHTML = `
+        <div class="wa-embed-layout">
+            <div class="wa-sidebar">
+                <div class="wa-sidebar-header">Semua Pesan Masuk</div>
+                <div class="wa-chat-list" id="wa-chat-list">
+                    ${sidebarHtml}
+                </div>
+            </div>
+            <div class="wa-main">
+                <div class="wa-main-header" id="wa-main-header">
+                    <div style="color:var(--text-muted);">Pilih obrolan untuk mulai membalas</div>
+                </div>
+                <div class="wa-messages" id="wa-messages">
+                    <!-- Messages go here -->
+                </div>
+                <div class="wa-input-area hidden" id="wa-input-area">
+                    <input type="text" id="wa-input" placeholder="Ketik balasan Anda..." onkeypress="handleWaInput(event)">
+                    <button class="btn btn-primary" onclick="sendWaReply()">Kirim</button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    if (currentLiveChatId) {
+        openLiveChat(currentLiveChatId, currentLiveChatType, true);
+    }
+    
+    // Setup polling for new messages in the currently open chat
+    liveChatInterval = setInterval(() => {
+        if (activeTab === 'livechat' && currentLiveChatId) {
+            openLiveChat(currentLiveChatId, currentLiveChatType, true);
+        }
+    }, 2000);
+}
+
+function openLiveChat(id, type, noScroll = false) {
+    currentLiveChatId = id;
+    currentLiveChatType = type;
+    
+    // Update active class in sidebar (if element exists)
+    const items = document.querySelectorAll('.wa-chat-item');
+    items.forEach(item => item.classList.remove('active'));
+    // we would ideally find the exact item but for simplicity we rely on re-renders for sidebar updates if needed
+    
+    let key = type === 'conversation' ? 'smcc_conversations' : 'smcc_curhat';
+    let chatData = getData(key).find(x => x.id === id);
+    if (!chatData) return;
+    
+    const header = document.getElementById('wa-main-header');
+    const msgContainer = document.getElementById('wa-messages');
+    const inputArea = document.getElementById('wa-input-area');
+    
+    let title = type === 'conversation' ? `Layanan: ${chatData.serviceName}` : 'Sesi Curhat';
+    header.innerHTML = `<strong>${title}</strong> <span class="badge badge-default" style="margin-left:10px;">${chatData.id}</span>`;
+    
+    inputArea.classList.remove('hidden');
+    
+    let html = '';
+    
+    if (type === 'conversation') {
+        html += `<div class="wa-bubble wa-bubble-bot">Memulai ${title}</div>`;
+        chatData.qa.forEach(item => {
+            html += `<div class="wa-bubble wa-bubble-bot">${item.q}</div>`;
+            html += `<div class="wa-bubble wa-bubble-left">${item.a}</div>`;
+        });
+    } else {
+        html += `<div class="wa-bubble wa-bubble-bot">Memulai Sesi Curhat</div>`;
+        if (chatData.text) {
+            html += `<div class="wa-bubble wa-bubble-left">${chatData.text}</div>`;
+        }
+        if (chatData.botResponse) {
+            html += `<div class="wa-bubble wa-bubble-bot">${chatData.botResponse}</div>`;
+        }
+    }
+    
+    if (chatData.adminReplies) {
+        chatData.adminReplies.forEach(reply => {
+            html += `<div class="wa-bubble wa-bubble-right">${reply}</div>`;
+        });
+    }
+    
+    msgContainer.innerHTML = html;
+    if (!noScroll) {
+        msgContainer.scrollTop = msgContainer.scrollHeight;
+    }
+}
+
+function handleWaInput(e) {
+    if (e.key === 'Enter') {
+        sendWaReply();
+    }
+}
+
+function sendWaReply() {
+    const input = document.getElementById('wa-input');
+    const text = input.value.trim();
+    if (!text || !currentLiveChatId) return;
+    
+    let key = currentLiveChatType === 'conversation' ? 'smcc_conversations' : 'smcc_curhat';
+    let items = getData(key);
+    let index = items.findIndex(x => x.id === currentLiveChatId);
+    
+    if (index !== -1) {
+        if (!items[index].adminReplies) items[index].adminReplies = [];
+        items[index].adminReplies.push(text);
+        saveData(key, items);
+        
+        input.value = '';
+        openLiveChat(currentLiveChatId, currentLiveChatType); // re-render chat right side
+    }
 }
 
 // ==========================================
