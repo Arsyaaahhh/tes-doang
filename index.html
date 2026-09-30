@@ -7,18 +7,16 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="platform-selector">
-        <label>Platform POV:</label>
-        <select id="platform-select">
-            <option value="WA">WhatsApp</option>
-            <option value="IG">Instagram</option>
-        </select>
-    </div>
-    
     <div class="chat-container" id="chat-container">
         <header class="chat-header">
             <h1>Layanan SMCC UNESA</h1>
-            <a href="admin.html" class="btn-admin">Admin</a>
+            <div class="header-actions">
+                <select id="platform-select" class="platform-select-inline">
+                    <option value="WA">WA POV</option>
+                    <option value="IG">IG POV</option>
+                </select>
+                <a href="admin.html" class="btn-admin">Admin</a>
+            </div>
         </header>
         
         <main class="chat-messages" id="chat-messages">

@@ -116,6 +116,24 @@ p {
     color: white;
 }
 
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.platform-select-inline {
+    padding: 0.3rem 0.5rem;
+    border-radius: 20px;
+    border: none;
+    font-size: 0.85rem;
+    background-color: rgba(255, 255, 255, 0.9);
+    color: #075e54;
+    font-weight: bold;
+    outline: none;
+    cursor: pointer;
+}
+
 .btn-admin {
     background-color: rgba(255, 255, 255, 0.15);
     color: white;
@@ -226,20 +244,6 @@ p {
     background-color: #075e54;
 }
 
-/* Platform Selector */
-.platform-selector {
-    text-align: center;
-    padding: 10px;
-    background-color: #fff;
-    border-bottom: 1px solid var(--border);
-    margin-bottom: 10px;
-}
-.platform-selector select {
-    padding: 5px 10px;
-    border-radius: 4px;
-    border: 1px solid var(--border);
-}
-
 /* Instagram Theme */
 .chat-container.ig-theme {
     background-color: #ffffff;
@@ -254,6 +258,10 @@ p {
 .chat-container.ig-theme .chat-header h1 {
     color: #262626;
     font-weight: 600;
+}
+.chat-container.ig-theme .platform-select-inline {
+    background-color: #efefef;
+    color: #262626;
 }
 .chat-container.ig-theme .btn-admin {
     background-color: #efefef;
